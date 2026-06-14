@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Intelligence Interface</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        :root {
+            --bg-dark: #020205;
+            --interface-glow: #00ff3c; 
+            --panel-bg: rgba(6, 6, 14, 0.95);
+            --font-terminal: 'VT323', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--interface-glow);
+            font-family: var(--font-terminal);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 60, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 60, 0.02) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #web-interface-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 460px;
+            max-height: 88vh;
+            background: #04040a;
+            border: 2px solid rgba(0, 255, 60, 0.2);
+            box-shadow: 0 0 40px rgba(0, 255, 60, 0.05);
+            border-radius: 16px;
+            z-index: 10;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .interface-header {
+            width: 100%;
+            padding: 10px 16px;
+            background: rgba(0, 0, 0, 0.6);
+            border-bottom: 1px solid rgba(0, 255, 60, 0.15);
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            z-index: 100;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+
+        #album {
+            width: 100%;
+            flex: 1;
+            position: relative;
+        }
+
+        .page {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: none; 
+            background-color: #04040a;
+        }
+
+        .page.active {
+            display: block;
+            z-index: 10;
+        }
+
+        .page.turn-active {
+            display: block;
+            animation: webPageFadeOut 0.6s ease-in-out forwards;
+            z-index: 20;
+        }
+
+        @keyframes webPageFadeOut {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.95); }
+        }
+
+        .web-frame {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            background-position: center;
+            background-size: cover; 
+            background-repeat: no-repeat;
+        }
+
+        .touch-sensor-layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 30; 
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.01); 
+        }
+
+        .web-frame::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(4,4,10,0) 50%, rgba(4,4,10,0.85) 100%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .ui-crosshairs {
+            position: absolute;
+            width: calc(100% - 40px);
+            height: calc(100% - 40px);
+            top: 20px;
+            left: 20px;
+            border: 1px solid rgba(0, 255, 60, 0.05);
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .text-overlay {
+            width: 90%;
+            margin-bottom: 40px;
+            text-align: center;
+            font-size: 2.1rem;
+            line-height: 1.2;
+            text-shadow: 0 0 6px var(--interface-glow);
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 255, 60, 0.4);
+            padding: 14px;
+            border-radius: 4px;
+            pointer-events: none; 
+            opacity: 0;
+            display: none;
+            transform: translateY(15px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            z-index: 50; 
+        }
+
+        .text-overlay.visible {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            animation: dataFloat 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes dataFloat {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-6px); }
+        }
+
+        .interaction-hint {
+            position: absolute;
+            bottom: 12px;
+            font-size: 0.9rem;
+            opacity: 0.3;
+            letter-spacing: 1px;
+            z-index: 4;
+            pointer-events: none;
+        }
+
+        /* --- HEART INTERACTIVE VIEWPORTS --- */
+        .heart-interactive-canvas {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #04040a;
+        }
+
+        .heart-instruction-banner {
+            position: absolute;
+            top: 15px;
+            width: 90%;
+            text-align: center;
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+            background: rgba(4, 4, 10, 0.85);
+            border: 1px dashed rgba(0, 255, 60, 0.3);
+            padding: 6px 10px;
+            border-radius: 4px;
+            z-index: 90;
+            pointer-events: none;
+            line-height: 1.2;
+        }
+
+        .heart-grid-underlay {
+            position: absolute;
+            width: 92%;
+            height: 74%;
+            top: 15%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            z-index: 80; 
+        }
+
+        .heart-row {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            height: 18%;
+        }
+
+        .grid-node {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            outline: none;
+            height: 100%;
+            margin: 0 3px;
+            border-radius: 6px;
+        }
+        
+        .grid-node:active {
+            background: rgba(0, 255, 60, 0.2);
+        }
+
+        .heart-foreground-asset {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: url('Heart.png');
+            background-size: cover; 
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* --- DIALOG MODAL LAYOUT --- */
+        .modal-screen-blur {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 2, 6, 0.94);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+
+        .modal-screen-blur.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-box-card {
+            background: #07070f;
+            border: 1px solid var(--interface-glow);
+            padding: 24px;
+            border-radius: 4px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0, 255, 60, 0.2);
+            transform: scale(0.9);
+            transition: transform 0.2s ease;
+            max-width: 88%;
+            width: 360px;
+        }
+
+        .modal-screen-blur.active .modal-box-card {
+            transform: scale(1);
+        }
+
+        .modal-static-label {
+            font-size: 1rem;
+            letter-spacing: 3px;
+            color: rgba(0, 255, 60, 0.5);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        #outputAlbumString {
+            font-size: 2.1rem;
+            color: #fff;
+            margin: 10px 0 15px 0;
+            line-height: 1.2;
+        }
+
+        #outputMessageString {
+            font-size: 1.6rem;
+            color: var(--interface-glow);
+            border-top: 1px dashed rgba(0, 255, 60, 0.3);
+            padding-top: 14px;
+            margin-bottom: 15px;
+            line-height: 1.3;
+            text-align: left;
+        }
+
+        .dismiss-modal-trigger {
+            background: transparent;
+            border: 1px solid var(--interface-glow);
+            color: var(--interface-glow);
+            font-family: var(--font-terminal);
+            font-size: 1.4rem;
+            padding: 6px 24px;
+            cursor: pointer;
+            border-radius: 2px;
+            text-transform: uppercase;
+        }
+
+        .dismiss-modal-trigger:hover {
+            background: var(--interface-glow);
+            color: #020205;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="web-interface-wrapper">
+        <div class="interface-header">
+            <span id="system-index-tag">SYS // DATA_VIEW_01</span>
+            <span style="animation: pulse 1s infinite alternate;">● ACTIVE STREAM</span>
+        </div>
+
+        <div id="album">
+            
+            <div id="page-1" class="page active">
+                <div class="web-frame" style="background-image: url('galaxy.png');">
+                    <div class="touch-sensor-layer" onclick="processSlideInteraction(1)"></div>
+                    <div class="ui-crosshairs"></div>
+                    <div id="text-block-1" class="text-overlay"></div>
+                    <div class="interaction-hint">[TAP ANYWHERE TO INTERACT]</div>
+                </div>
+            </div>
+
+            <div id="page-2" class="page">
+                <div class="web-frame" style="background-image: url('star.jpg');">
+                    <div class="touch-sensor-layer" onclick="processSlideInteraction(2)"></div>
+                    <div class="ui-crosshairs"></div>
+                    <div id="text-block-2" class="text-overlay"></div>
+                    <div class="interaction-hint">[TAP ANYWHERE TO INTERACT]</div>
+                </div>
+            </div>
+
+            <div id="page-3" class="page">
+                <div class="web-frame" style="background-image: url('falling.jpg');">
+                    <div class="touch-sensor-layer" onclick="processSlideInteraction(3)"></div>
+                    <div class="ui-crosshairs"></div>
+                    <div id="text-block-3" class="text-overlay"></div>
+                    <div class="interaction-hint">[TAP ANYWHERE TO INTERACT]</div>
+                </div>
+            </div>
+
+            <div id="page-4" class="page">
+                <div class="web-frame" style="background-image: url('earth.jpg');">
+                    <div class="touch-sensor-layer" onclick="processSlideInteraction(4)"></div>
+                    <div class="ui-crosshairs"></div>
+                    <div id="text-block-4" class="text-overlay"></div>
+                    <div class="interaction-hint">[TAP ANYWHERE TO INTERACT]</div>
+                </div>
+            </div>
+
+            <div id="page-5" class="page">
+                <div class="web-frame" style="background-image: url('baby.jpg');">
+                    <div class="touch-sensor-layer" onclick="processSlideInteraction(5)"></div>
+                    <div class="ui-crosshairs"></div>
+                    <div id="text-block-5" class="text-overlay"></div>
+                    <div class="interaction-hint">[TAP ANYWHERE TO INTERACT]</div>
+                </div>
+            </div>
+
+            <div id="page-6" class="page">
+                <div class="web-frame" style="background-image: url('Main.jpg');">
+                    <div class="touch-sensor-layer" onclick="processSlideInteraction(6)"></div>
+                    <div class="ui-crosshairs"></div>
+                    <div id="text-block-6" class="text-overlay"></div>
+                    <div class="interaction-hint">[TAP ANYWHERE TO INTERACT]</div>
+                </div>
+            </div>
+
+            <div id="page-7" class="page">
+                <div class="web-frame" style="background-image: url('Reciept.jpg');">
+                    <div class="touch-sensor-layer" onclick="processSlideInteraction(7)"></div>
+                    <div class="ui-crosshairs"></div>
+                    <div id="text-block-7" class="text-overlay"></div>
+                    <div class="interaction-hint">[TAP TO DECRYPT TARGET COLLAGE]</div>
+                </div>
+            </div>
+
+            <div id="page-8" class="page">
+                <div class="heart-interactive-canvas">
+                    <div class="heart-instruction-banner">
+                        ✨ TOUCH EACH PHOTO: IT WILL SHOW YOU WHAT YOU REMIND ME OF! ✨
+                    </div>
+                    <div class="heart-grid-underlay" id="heartGridMatrix"></div>
+                    <div class="heart-foreground-asset"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal-screen-blur" id="albumPopupShield" onclick="dismissPopupOutside(event)">
+        <div class="modal-box-card">
+            <div class="modal-static-label">// ACCESS PROFILE GRANTED //</div>
+            <div id="outputAlbumString">you remind me of ______</div>
+            <div id="outputMessageString">message description block</div>
+            <button class="dismiss-modal-trigger" onclick="closeAlbumModal()">RETURN TO MAP</button>
+        </div>
+    </div>
+
+    <script>
+        const slideChronologyData = {
+            1: { cursor: 0, dialogue: ["Hmm, let's see what we have here, same picture", "ahh what a beautiful galaxy"] },
+            2: { cursor: 0, dialogue: ["Oh this seems familiar", "*Let me reach the star*"] },
+            3: { cursor: 0, dialogue: ["HOLY SHIT, did I just throw someone off that star!"] },
+            4: { cursor: 0, dialogue: ["Well I hope they struck a landing", "Does seem familiar"] },
+            5: { cursor: 0, dialogue: ["System analysis: Profile metrics parsed successfully."] },
+            6: { cursor: 0, dialogue: ["Media log synchronized. Telemetry nominal."] },
+            7: { cursor: 0, dialogue: ["Data streams matching. Accessing deep core collage matrix..."] }
+        };
+
+        // Your 19 unique messages correctly mapped to the 1-k coordinates
+        const heartMatrixConfig = [
+            // Row 1 (1, 2, [spacer], 3, 4)
+            [
+                { code: "1", label: "Taylor Swift (Debut)", msg: "ice cream shopping", width: "20%" },
+                { code: "2", label: "Fearless", msg: "being a swiftie", width: "20%" },
+                { code: "spacer", width: "15%" },
+                { code: "3", label: "Speak Now", msg: "discussing bhagwan jis", width: "20%" },
+                { code: "4", label: "Red", msg: "badminton", width: "20%" }
+            ],
+            // Row 2 (5, 6, 7, 8, 9, @)
+            [
+                { code: "5", label: "1989", msg: "braces phase", width: "15%" },
+                { code: "6", label: "reputation", msg: "prank calls", width: "15%" },
+                { code: "7", label: "Lover", msg: "gedi maarna", width: "15%" },
+                { code: "8", label: "folklore", msg: "love in general", width: "15%" },
+                { code: "9", label: "evermore", msg: "every song I listen to", width: "15%" },
+                { code: "@", label: "Midnights", msg: "every program in school", width: "15%" }
+            ],
+            // Row 3 (a, b, c, d, e)
+            [
+                { code: "spacer", width: "8%" },
+                { code: "a", label: "The Tortured Poets Department", msg: "olivia rodrigo", width: "16%" },
+                { code: "b", label: "the life of a show girl", msg: "the lore behind how your insta id was formed", width: "16%" },
+                { code: "c", label: "sour", msg: "the lore behind evrything honestly", width: "16%" },
+                { code: "d", label: "guts", msg: "bts, F1, spam acc", width: "16%" },
+                { code: "e", label: "you seem pretty sad for a girl so in love", msg: "curly hair", width: "16%" },
+                { code: "spacer", width: "8%" }
+            ],
+            // Row 4 (f, g, h)
+            [
+                { code: "spacer", width: "15%" },
+                { code: "f", label: "Arirang", msg: "blind people", width: "22%" },
+                { code: "g", label: "man's best friend", msg: "bitching and gossip", width: "22%" },
+                { code: "h", label: "short 'n sweet", msg: "singing", width: "22%" },
+                { code: "spacer", width: "15%" }
+            ],
+            // Row 5 (I, j, k)
+            [
+                { code: "spacer", width: "25%" },
+                { code: "I", label: "emails i can't send", msg: "summer camp, guitar", width: "16%" },
+                { code: "j", label: "another bts album", msg: "jo bheji thi duaa", width: "16%" },
+                { code: "k", label: "Speak Now (Taylor's Version)", msg: "my whole life", width: "16%" },
+                { code: "spacer", width: "25%" }
+            ]
+        ];
+
+        let stateLockTransition = false;
+        let fadeTimer = null;
+
+        window.onload = () => {
+            renderActiveDialogueBox(1);
+            generateHeartLayoutGrid();
+        };
+
+        function renderActiveDialogueBox(pageID) {
+            const sequenceRecord = slideChronologyData[pageID];
+            const targetingTextBox = document.getElementById(`text-block-${pageID}`);
+            
+            if (sequenceRecord && sequenceRecord.dialogue.length > 0) {
+                targetingTextBox.innerText = sequenceRecord.dialogue[sequenceRecord.cursor];
+                targetingTextBox.classList.add('visible');
+                startTextAutoFade(targetingTextBox);
+            }
+            
+            document.getElementById('system-index-tag').innerText = `SYS // DATA_VIEW_0${pageID}`;
+        }
+
+        function startTextAutoFade(element) {
+            if (fadeTimer) clearTimeout(fadeTimer);
+            fadeTimer = setTimeout(() => {
+                element.classList.remove('visible');
+            }, 3500);
+        }
+
+        function processSlideInteraction(pageID) {
+            if (stateLockTransition) return;
+
+            const currentTextBox = document.getElementById(`text-block-${pageID}`);
+            
+            if (!currentTextBox.classList.contains('visible') && slideChronologyData[pageID].dialogue.length > 0) {
+                currentTextBox.classList.add('visible');
+                startTextAutoFade(currentTextBox);
+                return;
+            }
+
+            const targetData = slideChronologyData[pageID];
+            targetData.cursor++;
+
+            if (targetData.dialogue.length > 0 && targetData.cursor < targetData.dialogue.length) {
+                currentTextBox.classList.remove('visible');
+                if (fadeTimer) clearTimeout(fadeTimer);
+                
+                setTimeout(() => {
+                    currentTextBox.innerText = targetData.dialogue[targetData.cursor];
+                    currentTextBox.classList.add('visible');
+                    startTextAutoFade(currentTextBox);
+                }, 150);
+            } else {
+                if (fadeTimer) clearTimeout(fadeTimer);
+                executeDynamicPageFlip(pageID);
+            }
+        }
+
+        function executeDynamicPageFlip(sourcePageID) {
+            stateLockTransition = true;
+            
+            const activePageElement = document.getElementById(`page-${sourcePageID}`);
+            const subsequentPageID = sourcePageID + 1;
+            const subsequentPageElement = document.getElementById(`page-${subsequentPageID}`);
+
+            if (!subsequentPageElement) {
+                stateLockTransition = false;
+                return;
+            }
+
+            subsequentPageElement.classList.add('active');
+            activePageElement.classList.add('turn-active');
+
+            activePageElement.addEventListener('animationend', function() {
+                activePageElement.classList.remove('active', 'turn-active');
+                stateLockTransition = false;
+                
+                renderActiveDialogueBox(subsequentPageID);
+            }, { once: true });
+        }
+
+        function generateHeartLayoutGrid() {
+            const container = document.getElementById('heartGridMatrix');
+            container.innerHTML = "";
+
+            heartMatrixConfig.forEach(rowItems => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'heart-row';
+                
+                rowItems.forEach(item => {
+                    const block = document.createElement('div');
+                    block.style.width = item.width;
+                    block.style.height = '100%';
+                    
+                    if (item.code !== "spacer") {
+                        const btn = document.createElement('button');
+                        btn.className = 'grid-node';
+                        btn.style.width = '100%';
+                        btn.style.height = '100%';
+                        btn.onclick = (e) => {
+                            e.stopPropagation();
+                            mountAlbumModal(item.label, item.msg);
+                        };
+                        block.appendChild(btn);
+                    }
+                    rowDiv.appendChild(block);
+                });
+                container.appendChild(rowDiv);
+            });
+        }
+
+        function mountAlbumModal(albumLabel, rawMessage) {
+            const viewShield = document.getElementById('albumPopupShield');
+            const dataAlbumContainer = document.getElementById('outputAlbumString');
+            const dataMsgContainer = document.getElementById('outputMessageString');
+            
+            dataAlbumContainer.innerHTML = `you remind me of<br><span style="color:#00ff3c; font-size: 2.5rem; font-weight: bold; text-shadow: 0 0 10px rgba(0,255,60,0.4);">${albumLabel}</span>`;
+            dataMsgContainer.innerHTML = `💌 &gt; ${rawMessage}`;
+            
+            viewShield.classList.add('active');
+        }
+
+        function closeAlbumModal() {
+            document.getElementById('albumPopupShield').classList.remove('active');
+        }
+
+        function dismissPopupOutside(event) {
+            if (event.target === document.getElementById('albumPopupShield')) {
+                closeAlbumModal();
+            }
+        }
+    </script>
+</body>
+</html>
